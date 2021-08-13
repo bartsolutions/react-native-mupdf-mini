@@ -21,6 +21,11 @@ import android.view.View;
 import android.widget.Scroller;
 import android.widget.Toast;
 
+import com.facebook.react.bridge.WritableMap;
+import com.facebook.react.bridge.Arguments;
+import com.facebook.react.bridge.ReactContext;
+import com.facebook.react.uimanager.events.RCTEventEmitter;
+
 import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
@@ -122,8 +127,12 @@ public class MuPdfView extends View implements
      * Determine whether a password is required
      * **/
     protected void openDocument() {
+        final String password = this.password;
+        final ReactContext reactContext = (ReactContext)this.context;
+        final Integer moduelId = this.getId();
         worker.add(new Worker.Task() {
             boolean needsPassword;
+            boolean passwordOkay;
             public void work() {
                 Log.i(APP, "open document");
                 if (path != null)
@@ -131,12 +140,24 @@ public class MuPdfView extends View implements
                 else
                     doc = (PDFDocument) PDFDocument.openDocument(buffer, mimetype);
                 needsPassword = doc.needsPassword();
+                if (needsPassword) {
+                    passwordOkay = doc.authenticatePassword(password);
+                }
+
             }
             public void run() {
-                if (needsPassword)
-                    askPassword();
-                else
+                if (needsPassword) {
+                   if (passwordOkay) {
+                       loadDocument();
+                   } else  {
+                       WritableMap event = Arguments.createMap();
+                       event.putString("message", "error|Password required or incorrect password.");
+                       reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(moduelId, "topChange", event);
+                   }
+                } else {
                     loadDocument();
+                }
+
             }
         });
     }
@@ -255,12 +276,15 @@ public class MuPdfView extends View implements
     protected void askPassword(){
         if(password != null)
             checkPassword(password);
+
     }
 
     protected void checkPassword(final String password) {
+        final ReactContext reactContext = (ReactContext)this.context;
+        final Integer moduelId = this.getId();
         worker.add(new Worker.Task() {
             boolean passwordOkay;
-            public void work() {
+            public void work() throws Throwable {
                 Log.i(APP, "check password");
                 passwordOkay = doc.authenticatePassword(password);
             }
@@ -301,6 +325,9 @@ public class MuPdfView extends View implements
         }
     }
 
+    public ThemedReactContext getThemedReactContext() {
+        return this.context;
+    }
     public void setPage(int page){
         currentPage = page;
     }
