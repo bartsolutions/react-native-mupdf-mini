@@ -284,7 +284,7 @@ public class MuPdfView extends View implements
         final Integer moduelId = this.getId();
         worker.add(new Worker.Task() {
             boolean passwordOkay;
-            public void work() throws Throwable {
+            public void work() {
                 Log.i(APP, "check password");
                 passwordOkay = doc.authenticatePassword(password);
             }
