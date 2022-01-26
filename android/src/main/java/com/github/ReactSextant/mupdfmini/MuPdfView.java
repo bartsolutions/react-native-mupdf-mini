@@ -171,6 +171,9 @@ public class MuPdfView extends View implements
      * @info pageCount
      * **/
     protected void loadDocument() {
+        final ReactContext reactContext = (ReactContext)this.context;
+        final Integer moduelId = this.getId();
+
         worker.add(new Worker.Task() {
             public void work() {
                 try {
@@ -183,12 +186,18 @@ public class MuPdfView extends View implements
                         Log.i(APP, "layout document");
                         doc.layout(layoutW, layoutH, layoutEm);
                     }
+                    WritableMap event = Arguments.createMap();
+                    event.putString("message", "loaded");
+                    reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(moduelId, "topChange", event);
                 } catch (Throwable x) {
                     doc = null;
                     pageCount = 1;
                     currentPage = 0;
                     throw x;
                 }
+                WritableMap event = Arguments.createMap();
+                event.putString("message", "pageCount|" + pageCount);
+                reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(moduelId, "topChange", event);
             }
             public void run() {
                 if (currentPage < 0 || currentPage >= pageCount)
@@ -202,6 +211,9 @@ public class MuPdfView extends View implements
      * relayout document
      * **/
     protected void relayoutDocument() {
+        final ReactContext reactContext = (ReactContext)this.context;
+        final Integer moduelId = this.getId();
+
         worker.add(new Worker.Task() {
             public void work() {
                 try {
@@ -215,6 +227,9 @@ public class MuPdfView extends View implements
                     currentPage = 0;
                     throw x;
                 }
+                WritableMap event = Arguments.createMap();
+                event.putString("message", "pageCount|" + pageCount);
+                reactContext.getJSModule(RCTEventEmitter.class).receiveEvent(moduelId, "topChange", event);
             }
 
             public void run() {
