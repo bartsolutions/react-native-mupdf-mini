@@ -68,7 +68,7 @@ public class MuPdfView extends View implements
     protected float pageZoom;
 
     public Link[] links;
-    public Quad[] hits;
+    public Quad[][] hits;
     protected Paint linkPaint;
     protected Paint hitPaint;
 
@@ -256,14 +256,18 @@ public class MuPdfView extends View implements
                     links = mPDFPage.getLinks();
                     if (links != null)
                         for (Link link : links)
-                            link.bounds.transform(ctm);
+                            link.getBounds().transform(ctm);
 
                     if(key != null)
                         hits = mPDFPage.search(key);
                         if (hits != null)
-                            for (Quad hit : hits)
-                                hit.transform(ctm);
-
+                            for (Quad[] line : hits) {
+                                if (line != null) {
+                                    for (Quad hit : line) {
+                                        hit.transform(ctm);
+                                    }
+                                }
+                            }
                     if (zoom != 1)
                         ctm.scale(zoom);
 
@@ -526,7 +530,7 @@ public class MuPdfView extends View implements
         // render links
         if (showLinks && links != null && links.length > 0) {
             for (Link link : links) {
-                Rect b = link.bounds;
+                Rect b = link.getBounds();
                 canvas.drawRect(
                         x + b.x0 * viewScale,
                         y + b.y0 * viewScale,
@@ -539,14 +543,18 @@ public class MuPdfView extends View implements
 
         // render hits
         if (hits != null && hits.length > 0) {
-            for (Quad q : hits) {
-                _path.rewind();
-                _path.moveTo(x + q.ul_x * viewScale, y + q.ul_y * viewScale);
-                _path.lineTo(x + q.ll_x * viewScale, y + q.ll_y * viewScale);
-                _path.lineTo(x + q.lr_x * viewScale, y + q.lr_y * viewScale);
-                _path.lineTo(x + q.ur_x * viewScale, y + q.ur_y * viewScale);
-                _path.close();
-                canvas.drawPath(_path, hitPaint);
+            for (Quad[] line : hits) {
+                if (line != null) {
+                    for (Quad q : line) {
+                        _path.rewind();
+                        _path.moveTo(x + q.ul_x * viewScale, y + q.ul_y * viewScale);
+                        _path.lineTo(x + q.ll_x * viewScale, y + q.ll_y * viewScale);
+                        _path.lineTo(x + q.lr_x * viewScale, y + q.lr_y * viewScale);
+                        _path.lineTo(x + q.ur_x * viewScale, y + q.ur_y * viewScale);
+                        _path.close();
+                        canvas.drawPath(_path, hitPaint);
+                    }
+                }
             }
         }
     }
